@@ -1,0 +1,20 @@
+# Any compiled (pyc) files
+__pycache__/
+
+# User configuration
+.vscode/
+
+# Environment variables
+*.env
+
+# Misc
+.DS_Store
+create_db.sh
+.db
+.coverage
+.pytest_cache
+
+ouch-ecr-busted.sh
+ouch-ecr-removal.sh
+push-to-stage-ecr.sh
+out/
