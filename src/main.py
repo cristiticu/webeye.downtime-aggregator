@@ -1,19 +1,16 @@
 import itertools
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from context import ApplicationContext
 import settings
-
-if settings.ENVIRONMENT != "production":
+if TYPE_CHECKING:
     from aws_lambda_typing.context import Context
-else:
-    type Context = Any
 
 
 application_context = ApplicationContext()
 
 
-def lambda_handler(event: dict[str, Any], context: Context) -> dict[str, Any]:
+def lambda_handler(event: dict[str, Any], context: "Context") -> dict[str, Any]:
     u_guid = event["u_guid"]
     url = event["url"]
 
