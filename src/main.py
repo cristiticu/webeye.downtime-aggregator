@@ -49,4 +49,4 @@ def lambda_handler(event: dict[str, Any], context: Context) -> dict[str, Any]:
 if __name__ == "__main__":
     if settings.ENVIRONMENT == "dev":
         application_context.events.check_for_downtime(
-            "fb8b90bc-6015-4b46-8e6a-c2bb178d97f6", "https://www.cs.ubbcluj2.ro/", ['america'])
+            "fb8b90bc-6015-4b46-8e6a-c2bb178d97f6", "https://weather.cristit.icu", ['america'])
