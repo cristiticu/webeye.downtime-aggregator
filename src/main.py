@@ -25,10 +25,10 @@ def process_record(aggregate_request) -> dict[str, Any]:
         scheduled_checks = application_context.scheduled_tasks_persistence.get_all_scheduled_checks(
             u_guid, url)
 
-        regions = list(set(list(itertools.chain.from_iterable(
-            [check.configuration.regions for check in scheduled_checks]))))
+        zones = list(set(list(itertools.chain.from_iterable(
+            [check.configuration.zones for check in scheduled_checks]))))
 
-        application_context.events.check_for_downtime(u_guid, url, regions)
+        application_context.events.check_for_downtime(u_guid, url, zones)
 
         return {
             "statusCode": 200,
@@ -56,9 +56,3 @@ def lambda_handler(event: "SQSEvent", context: "Context"):
     with ThreadPoolExecutor() as executor:
         executor.map(process_record, [json.loads(record.get(
             "body", "")) for record in records], timeout=20)
-
-
-# if __name__ == "__main__":
-#     if settings.ENVIRONMENT == "test":
-#         application_context.events.check_for_downtime(
-#             "fb8b90bc-6015-4b46-8e6a-c2bb178d97f6", "https://weather.cristit.icu", ['america'])

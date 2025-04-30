@@ -1,25 +1,30 @@
 from datetime import datetime
-from typing import Literal, Mapping
+from typing import Generic, Literal, Mapping, TypeVar
 from pydantic import UUID4, BaseModel
 
+ConfigurationType = TypeVar("ConfigurationType", bound=BaseModel)
 
-class ScheduledTask(BaseModel):
+
+class ScheduledTask(BaseModel, Generic[ConfigurationType]):
     guid: UUID4
     u_guid: UUID4
-    task_type: Literal["CHECK"]
+    task_type: str
     interval: str
     days: str
+    configuration: ConfigurationType
     c_at: datetime
 
 
-class ScheduledCheckConfiguration(BaseModel):
+class CheckConfiguration(BaseModel):
     url: str
-    regions: list[Literal["america", "europe", "asia_pacific"]]
+    zones: list[Literal["america", "europe", "asia_pacific"]]
+    check_string: str | None = None
+    fail_on_status: list[int]
+    timeout: int
+    save_screenshot: bool
 
 
-class ScheduledCheck(ScheduledTask):
-    configuration: ScheduledCheckConfiguration
-
+class ScheduledCheck(ScheduledTask[CheckConfiguration]):
     def to_db_item(self):
         h_key = str(self.u_guid)
         s_key = f"CHECK#{self.configuration.url}#{self.guid}"
@@ -39,7 +44,7 @@ class ScheduledCheck(ScheduledTask):
         split_s_key = item["s_key"].split("#")
         split_schedule = item["schedule"].split("#")
 
-        configuration = ScheduledCheckConfiguration.model_validate(
+        configuration = CheckConfiguration.model_validate(
             item["configuration"])
 
         item_payload = {
