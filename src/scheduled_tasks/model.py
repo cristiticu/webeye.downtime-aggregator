@@ -8,6 +8,7 @@ ConfigurationType = TypeVar("ConfigurationType", bound=BaseModel)
 class ScheduledTask(BaseModel, Generic[ConfigurationType]):
     guid: UUID4
     u_guid: UUID4
+    w_guid: UUID4
     task_type: str
     interval: str
     days: str
@@ -19,7 +20,7 @@ class CheckConfiguration(BaseModel):
     url: str
     zones: list[Literal["america", "europe", "asia_pacific"]]
     check_string: str | None = None
-    fail_on_status: list[int]
+    accepted_status: list[str]
     timeout: int
     save_screenshot: bool
 
@@ -33,6 +34,7 @@ class ScheduledCheck(ScheduledTask[CheckConfiguration]):
         return {
             "h_key": h_key,
             "s_key": s_key,
+            "w_guid": str(self.w_guid),
             "schedule": schedule,
             "configuration": self.configuration.model_dump(mode="json"),
             "c_at": self.c_at.isoformat().replace("+00:00", "Z")
