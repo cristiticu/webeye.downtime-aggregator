@@ -5,6 +5,9 @@ load_dotenv('.env')
 
 ENVIRONMENT = os.environ.get('ENVIRONMENT')
 AWS_REGION = os.environ.get('AWS_REGION', '')
+BACKEND_BASE_URL = os.environ.get(
+    'BACKEND_BASE_URL', "https://webeye.cristit.icu")
+
 RESOURCE_PREFIX = "production" if ENVIRONMENT == "production" else "stage"
 
 DYNAMODB_URL_OVERRIDE = os.environ.get('DYNAMODB_URL_OVERRIDE')
@@ -14,6 +17,14 @@ SCHEDULED_TASKS_TABLE_REGION = "eu-central-1"
 SCHEDULED_TASKS_SCHEDULE_GSI = "schedule-gsi"
 MONITORING_EVENTS_TABLE_NAME = "webeye.monitoring-events"
 MONITORING_EVENTS_TABLE_REGION = "eu-central-1"
+USER_ACCOUNTS_TABLE_NAME = "webeye.user-accounts"
+USER_ACCOUNTS_TABLE_REGION = "eu-central-1"
+MONITORED_WEBPAGES_TABLE_NAME = "webeye.monitored-webpages"
+MONITORED_WEBPAGES_TABLE_REGION = "eu-central-1"
+
+
+SES_REGION = "eu-central-1"
+SES_SOURCE = "notifications@webeye.cristit.icu"
 
 AVAILABLE_REGIONS = {
     "america": [

@@ -3,18 +3,17 @@ import itertools
 import json
 from typing import Any, TYPE_CHECKING
 
-from context import ApplicationContext
+from context import ThreadSafeApplicationContext
 
 if TYPE_CHECKING:
     from aws_lambda_typing.context import Context
     from aws_lambda_typing.events import SQSEvent
 
 
-application_context = ApplicationContext()
-
-
 def process_record(aggregate_request) -> dict[str, Any]:
     print(f"Processing record {aggregate_request}")
+
+    application_context = ThreadSafeApplicationContext()
 
     try:
         u_guid: str = aggregate_request["u_guid"]

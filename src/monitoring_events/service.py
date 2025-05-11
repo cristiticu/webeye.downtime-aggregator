@@ -1,15 +1,43 @@
 from datetime import datetime, timezone
 from uuid import UUID
+from monitored_webpages.exceptions import MonitoredWebpageNotFound
+from monitored_webpages.persistence import MonitoredWebpagePersistence
 from monitoring_events.exceptions import GeneralContextNotFound
 from monitoring_events.model import CurrentStatus, DowntimePeriod, GeneralContext
 from monitoring_events.persistence import MonitoringEventsPersistence
 import settings
+from user_account.exceptions import UserAccountNotFound
+from user_account.persistence import UserAccountPersistence
 from utils.datetime_parsing import split_interval_by_days
+from utils.ses import send_email
 
 
 class MonitoringEventsService():
-    def __init__(self, persistence: MonitoringEventsPersistence):
+    def __init__(self, persistence: MonitoringEventsPersistence, user_accounts_persistence: UserAccountPersistence, webpages_persistence: MonitoredWebpagePersistence):
         self._events = persistence
+        self._user_accounts = user_accounts_persistence
+        self._webpages = webpages_persistence
+
+    def send_downtime_start_email(self, u_guid: UUID, url: str):
+        try:
+            user = self._user_accounts.get(str(u_guid))
+            webpage = self._webpages.get(str(u_guid), url)
+
+            send_email([user.email], f"{url} is DOWN", {
+                "text": f"Your webpage is down! See details: {settings.BACKEND_BASE_URL}/dashboard?w_guid={webpage.guid}"})
+        except UserAccountNotFound:
+            print("User account not found. Skipping email")
+        except MonitoredWebpageNotFound:
+            print("Monitored webpage not found. Skipping email")
+
+    def send_downtime_end_email(self, u_guid: UUID, url: str):
+        try:
+            user = self._user_accounts.get(str(u_guid))
+
+            send_email([user.email], f"{url} is back up!", {
+                "text": f"Your webpage is back up! Everything is in order"})
+        except UserAccountNotFound:
+            print("User account not found. Skipping email")
 
     def get_general_context_or_create(self, u_guid: str, url: str):
         try:
@@ -79,6 +107,10 @@ class MonitoringEventsService():
                 print("Changing downtime s_at")
                 new_downtime_s_at = earliest_down_region_m_at
 
+                print("Sending email")
+                self.send_downtime_start_email(
+                    current_general_context.u_guid, current_general_context.url)
+
             print(f"Downtime detected. Most likely error: {new_error}")
         elif down_regions == 0 and current_general_context.status == "down":
             new_status = "up"
@@ -90,6 +122,9 @@ class MonitoringEventsService():
                 earliest_up_region_m_at,
                 new_error,
             )
+
+            self.send_downtime_end_email(
+                current_general_context.u_guid, current_general_context.url)
 
             new_downtime_s_at = None
             new_error = None
