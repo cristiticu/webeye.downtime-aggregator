@@ -4,6 +4,7 @@ from monitoring_events.exceptions import GeneralContextNotFound
 from monitoring_events.model import CurrentStatus, DowntimePeriod, GeneralContext
 from monitoring_events.persistence import MonitoringEventsPersistence
 import settings
+from utils.datetime_parsing import split_interval_by_days
 
 
 class MonitoringEventsService():
@@ -21,6 +22,19 @@ class MonitoringEventsService():
             self._events.persist(status)
 
         return status
+
+    def create_downtime_period(self, u_guid: UUID, url: str, s_at: datetime, r_at: datetime, error: str | None = None):
+        with self._events.batch_persist() as batch:
+            for s_at_index, r_at_index in split_interval_by_days(s_at, r_at):
+                downtime_period = DowntimePeriod(
+                    u_guid=u_guid,
+                    url=url,
+                    error=error,
+                    s_at=s_at_index,
+                    r_at=r_at_index
+                )
+
+                batch.persist(downtime_period)
 
     def update_general_context(self, current_general_context: GeneralContext, region_status_list: list[CurrentStatus], total_regions: int):
         new_status = current_general_context.status
@@ -69,15 +83,13 @@ class MonitoringEventsService():
         elif down_regions == 0 and current_general_context.status == "down":
             new_status = "up"
 
-            downtime_period = DowntimePeriod(
-                u_guid=current_general_context.u_guid,
-                url=current_general_context.url,
-                error=new_error,
-                s_at=current_general_context.downtime_s_at if current_general_context.downtime_s_at else earliest_up_region_m_at,
-                r_at=earliest_up_region_m_at
+            self.create_downtime_period(
+                current_general_context.u_guid,
+                current_general_context.url,
+                current_general_context.downtime_s_at if current_general_context.downtime_s_at else earliest_up_region_m_at,
+                earliest_up_region_m_at,
+                new_error,
             )
-
-            self._events.persist(downtime_period)
 
             new_downtime_s_at = None
             new_error = None
